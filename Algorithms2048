@@ -1,3 +1,4 @@
+
 import java.util.Timer;
 
 import java.awt.*;
@@ -13,7 +14,7 @@ public class Algorithms2048 extends JPanel {
             new Color(0xffdac3), new Color(0xe7b08e), new Color(0xe7bf8e),
             new Color(0xffc4c3), new Color(0xE7948e), new Color(0xbe7e56),
             new Color(0xbe5e56), new Color(0x9c3931), new Color(0x701710)};
-    final static int target = 512;
+    final static int target = 2048;
     static int highest;
     static int score;
     private Color gridColor = new Color(0xBBADA0);
@@ -21,7 +22,7 @@ public class Algorithms2048 extends JPanel {
     private Color startColor = new Color(0xFFEBCD);
     private Random rand = new Random();
     private Tile[][] tiles;
-    private int side = 4;
+    private int side = 5;
     private State gamestate = State.start;
     private boolean checkingAvailableMoves;
     public Algorithms2048() {
@@ -89,6 +90,11 @@ public class Algorithms2048 extends JPanel {
                     }
                 }
             }
+
+            g.setColor(Color.BLACK);
+            g.setFont(new Font("Dialogue", Font.BOLD, 24));
+            String scoreText = "Score: " + score;
+            g.drawString(scoreText, 700, 50);
         } else {
             g.setColor(startColor);
             g.fillRoundRect(215, 115, 469, 469, 7, 7);
@@ -106,6 +112,7 @@ public class Algorithms2048 extends JPanel {
             g.drawString("Whoever reached 512 in the least amount of time win", 290, 590);
         }
     }
+
     void drawTile(Graphics2D g, int r, int c) {
         int value = tiles[r][c].getValue();
         g.setColor(colorTable[(int) (Math.log(value) / Math.log(2)) + 1]);
@@ -205,4 +212,3 @@ public class Algorithms2048 extends JPanel {
     }
 
 }
-
