@@ -1,3 +1,4 @@
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -320,12 +321,28 @@ public class Algorithms2048 extends JPanel {
     }
 
     private void gameOver() {
-        JOptionPane.showMessageDialog(this, "Game Over! Your score was: " + score + "\nClick OK to start a new game.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+
+        JOptionPane.showMessageDialog(this, "Game Over! Your score was: " + score + "\nClick OK to enter your details.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+
+
+        JTextField usernameField = new JTextField();
+        JTextField sloganField = new JTextField();
+        Object[] message = {
+                "Username:", usernameField,
+                "Slogan:", sloganField
+        };
+
+        int option = JOptionPane.showConfirmDialog(null, message, "Enter Username and Slogan", JOptionPane.OK_CANCEL_OPTION);
+        if (option == JOptionPane.OK_OPTION) {
+            String username = usernameField.getText().trim();
+            String slogan = sloganField.getText().trim();
+
+            addToLeaderboard(username, slogan);
+        }
+
         resetGame();
     }
 
 
-    }
 
-
-
+}
