@@ -1,0 +1,20 @@
+import javax.swing.*;
+import java.util.*;
+public class LeaderboardEntry {
+    private String username;
+    private String slogan;
+    private int score;
+    private long time;
+
+    public LeaderboardEntry(String username, String slogan, int score, long time) {
+        this.username = username;
+        this.slogan = slogan;
+        this.score = score;
+        this.time = time;
+    }
+
+    public String getUsername() { return username; }
+    public String getSlogan() { return slogan; }
+    public int getScore() { return score; }
+    public long getTime() { return time; }
+}
