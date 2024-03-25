@@ -1,19 +1,28 @@
-
-import java.util.Timer;
-
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Random;
 import javax.swing.*;
+import java.util.Random;
+import java.util.*;
+import java.util.List;
+import java.util.ArrayList;
+
 public class Algorithms2048 extends JPanel {
     enum State {
         start, won, running, over
     }
+
     final Color[] colorTable = {
             new Color(0x701710), new Color(0xFFE4C3), new Color(0xfff4d3),
             new Color(0xffdac3), new Color(0xe7b08e), new Color(0xe7bf8e),
             new Color(0xffc4c3), new Color(0xE7948e), new Color(0xbe7e56),
             new Color(0xbe5e56), new Color(0x9c3931), new Color(0x701710)};
+
+    private String username;
+    private String slogan;
+    private static List<LeaderboardEntry> leaderboard = new ArrayList<>();
+    private javax.swing.Timer timer;
+    private long startTime;
+    private long elapsedTime;
     final static int target = 2048;
     static int highest;
     static int score;
@@ -22,14 +31,16 @@ public class Algorithms2048 extends JPanel {
     private Color startColor = new Color(0xFFEBCD);
     private Random rand = new Random();
     private Tile[][] tiles;
-    private int side = 5;
+    private int side = 4;
     private State gamestate = State.start;
     private boolean checkingAvailableMoves;
+
     public Algorithms2048() {
         setPreferredSize(new Dimension(900, 700));
         setBackground(new Color(0xFAF8EF));
         setFont(new Font("SansSerif", Font.BOLD, 48));
         setFocusable(true);
+
         addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
@@ -37,27 +48,80 @@ public class Algorithms2048 extends JPanel {
                 repaint();
             }
         });
+
         addKeyListener(new KeyAdapter() {
             @Override
             public void keyPressed(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_UP:
-                        moveUp();
-                        break;
-                    case KeyEvent.VK_DOWN:
-                        moveDown();
-                        break;
-                    case KeyEvent.VK_LEFT:
-                        moveLeft();
-                        break;
-                    case KeyEvent.VK_RIGHT:
-                        moveRight();
-                        break;
+                if (gamestate == State.running) {
+                    switch (e.getKeyCode()) {
+                        case KeyEvent.VK_UP:
+                            moveUp();
+                            break;
+                        case KeyEvent.VK_DOWN:
+                            moveDown();
+                            break;
+                        case KeyEvent.VK_LEFT:
+                            moveLeft();
+                            break;
+                        case KeyEvent.VK_RIGHT:
+                            moveRight();
+                            break;
+                    }
+                    repaint();
                 }
+            }
+        });
+
+        timer = new javax.swing.Timer(1000, e -> {
+            if (gamestate == State.running) {
+                elapsedTime = System.currentTimeMillis() - startTime;
                 repaint();
             }
         });
+        timer.start();
     }
+
+    public Algorithms2048(String username, String slogan) {
+        this();
+        this.username = username;
+        this.slogan = slogan;
+    }
+
+    private void addToLeaderboard(String username, String slogan) {
+        leaderboard.add(new LeaderboardEntry(username, slogan, score, elapsedTime));
+        displayLeaderboard();
+    }
+
+    private void displayLeaderboard() {
+        leaderboard.sort(Comparator.comparingInt(LeaderboardEntry::getScore).reversed().thenComparingLong(LeaderboardEntry::getTime));
+
+        StringBuilder leaderboardText = new StringBuilder("<html>Leaderboard:<br>");
+        for (LeaderboardEntry entry : leaderboard) {
+            leaderboardText.append(String.format("%s (%s) - Score: %d, Time: %s<br>",
+                    entry.getUsername(), entry.getSlogan(), entry.getScore(), formatTime(entry.getTime())));
+        }
+        leaderboardText.append("</html>");
+
+        JOptionPane.showMessageDialog(null, leaderboardText.toString(), "Leaderboard", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private String formatTime(long timeMillis) {
+        long seconds = (timeMillis / 1000) % 60;
+        long minutes = (timeMillis / (1000 * 60)) % 60;
+        return String.format("%02d:%02d", minutes, seconds);
+    }
+
+    private void checkGameState() {
+        if (!movesAvailable()) {
+            gamestate = State.over;
+            gameOver();
+        }
+        if (highest == target) {
+            gamestate = State.won;
+            gameOver();
+        }
+    }
+
     @Override
     public void paintComponent(Graphics gg) {
         super.paintComponent(gg);
@@ -66,6 +130,7 @@ public class Algorithms2048 extends JPanel {
                 RenderingHints.VALUE_ANTIALIAS_ON);
         drawGrid(g);
     }
+
     void startGame() {
         if (gamestate != State.running) {
             score = 0;
@@ -74,8 +139,21 @@ public class Algorithms2048 extends JPanel {
             tiles = new Tile[side][side];
             addRandomTile();
             addRandomTile();
+            startTime = System.currentTimeMillis();
+            elapsedTime = 0;
         }
     }
+
+    private void resetGame() {
+        tiles = new Tile[side][side];
+        score = 0;
+        highest = 0;
+        gamestate = State.start;
+        addRandomTile();
+        addRandomTile();
+        repaint();
+    }
+
     void drawGrid(Graphics2D g) {
         g.setColor(gridColor);
         g.fillRoundRect(200, 100, 699, 599, 20, 20);
@@ -95,6 +173,12 @@ public class Algorithms2048 extends JPanel {
             g.setFont(new Font("Dialogue", Font.BOLD, 24));
             String scoreText = "Score: " + score;
             g.drawString(scoreText, 700, 50);
+
+            long elapsedSeconds = elapsedTime / 1000;
+            String timeFormatted = String.format("%02d:%02d", elapsedSeconds / 60, elapsedSeconds % 60);
+            g.drawString("Time: " + timeFormatted, 700, 80);
+
+
         } else {
             g.setColor(startColor);
             g.fillRoundRect(215, 115, 469, 469, 7, 7);
@@ -109,7 +193,6 @@ public class Algorithms2048 extends JPanel {
             g.setColor(gridColor);
             g.drawString("click to start a new game", 330, 470);
             g.drawString("(use arrow keys to move tiles)", 310, 530);
-            g.drawString("Whoever reached 512 in the least amount of time win", 290, 590);
         }
     }
 
@@ -126,6 +209,7 @@ public class Algorithms2048 extends JPanel {
         int y = 115 + r * 121 + (asc + (106 - (asc + dec)) / 2);
         g.drawString(s, x, y);
     }
+
     private void addRandomTile() {
         int pos = rand.nextInt(side * side);
         int row, col;
@@ -137,6 +221,7 @@ public class Algorithms2048 extends JPanel {
         int val = rand.nextInt(10) == 0 ? 4 : 2;
         tiles[row][col] = new Tile(val);
     }
+
     private boolean move(int countDownFrom, int yIncr, int xIncr) {
         boolean moved = false;
         for (int i = 0; i < side * side; i++) {
@@ -186,29 +271,61 @@ public class Algorithms2048 extends JPanel {
         }
         return moved;
     }
+
     boolean moveUp() {
-        return move(0, -1, 0);
+        boolean moved = move(0, -1, 0);
+        if (moved) checkGameState();
+        return moved;
     }
+
     boolean moveDown() {
-        return move(side * side - 1, 1, 0);
+        boolean moved = move(side * side - 1, 1, 0);
+        if (moved) checkGameState();
+        return moved;
     }
+
     boolean moveLeft() {
-        return move(0, 0, -1);
+        boolean moved = move(0, 0, -1);
+        if (moved) checkGameState();
+        return moved;
     }
+
     boolean moveRight() {
-        return move(side * side - 1, 0, 1);
+        boolean moved = move(side * side - 1, 0, 1);
+        if (moved) checkGameState();
+        return moved;
     }
+
     void clearMerged() {
         for (Tile[] row : tiles)
             for (Tile tile : row)
                 if (tile != null)
                     tile.setMerged(false);
     }
+
     boolean movesAvailable() {
-        checkingAvailableMoves = true;
-        boolean hasMoves = moveUp() || moveDown() || moveLeft() || moveRight();
-        checkingAvailableMoves = false;
-        return hasMoves;
+        for (int x = 0; x < side; x++) {
+            for (int y = 0; y < side; y++) {
+
+                if (tiles[x][y] == null) return true;
+
+                Tile tile = tiles[x][y];
+                if ((x < side - 1 && tile.canMergeWith(tiles[x + 1][y])) ||
+                        (y < side - 1 && tile.canMergeWith(tiles[x][y + 1]))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
-}
+    private void gameOver() {
+        JOptionPane.showMessageDialog(this, "Game Over! Your score was: " + score + "\nClick OK to start a new game.", "Game Over", JOptionPane.INFORMATION_MESSAGE);
+        resetGame();
+    }
+
+
+    }
+
+
+
