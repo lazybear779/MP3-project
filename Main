@@ -1,12 +1,12 @@
 import javax.swing.*;
-import java.awt.*;
+import java.awt.BorderLayout;
 
 public class Main {
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
             JFrame f = new JFrame();
             f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            f.setTitle("2048 PVP mode");
+            f.setTitle("2048 Game");
             f.setResizable(true);
             f.add(new Algorithms2048(), BorderLayout.CENTER);
             f.pack();
